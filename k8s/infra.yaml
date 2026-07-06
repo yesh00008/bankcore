@@ -1,0 +1,134 @@
+---
+# Postgres
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-postgres
+  namespace: bankcore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-postgres
+  template:
+    metadata:
+      labels:
+        app: bankcore-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        env:
+        - { name: POSTGRES_USER,     value: fintech }
+        - { name: POSTGRES_PASSWORD, value: fintech123 }
+        - { name: POSTGRES_DB,       value: bankcore }
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "256Mi", cpu: "250m" }
+          limits:   { memory: "512Mi", cpu: "500m" }
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "fintech", "-d", "bankcore"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-postgres
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-postgres
+  ports:
+  - { port: 5432, targetPort: 5432, name: postgres }
+
+---
+# Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-redis
+  namespace: bankcore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-redis
+  template:
+    metadata:
+      labels:
+        app: bankcore-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests: { memory: "64Mi",  cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "100m" }
+        readinessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-redis
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-redis
+  ports:
+  - { port: 6379, targetPort: 6379, name: redis }
+
+---
+# RabbitMQ
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-rabbitmq
+  namespace: bankcore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: bankcore-rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3.13-management-alpine
+        env:
+        - { name: RABBITMQ_DEFAULT_USER, value: fintech }
+        - { name: RABBITMQ_DEFAULT_PASS, value: rabbit123 }
+        ports:
+        - { containerPort: 5672,  name: amqp }
+        - { containerPort: 15672, name: management }
+        resources:
+          requests: { memory: "128Mi", cpu: "100m" }
+          limits:   { memory: "256Mi", cpu: "250m" }
+        readinessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "ping"]
+          initialDelaySeconds: 20
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-rabbitmq
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-rabbitmq
+  ports:
+  - { port: 5672,  targetPort: 5672,  name: amqp }
+  - { port: 15672, targetPort: 15672, name: management }

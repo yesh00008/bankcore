@@ -1,0 +1,282 @@
+# ─── BankCore — Docker Compose (local development / log collection) ───────────
+# 10 Go microservices + Postgres + Redis + RabbitMQ
+#
+# Usage:
+#   docker compose up --build
+#   docker compose logs -f
+#   docker compose logs -f bankcore-core-banking
+
+networks:
+  bankcore:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  # ─── Infrastructure ───────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fintech
+      POSTGRES_PASSWORD: fintech123
+      POSTGRES_DB: bankcore
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks: [bankcore]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fintech -d bankcore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379"
+    networks: [bankcore]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: fintech
+      RABBITMQ_DEFAULT_PASS: rabbit123
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    networks: [bankcore]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─── Go Microservices ─────────────────────────────────────────────────────
+
+  core-banking-service:
+    build:
+      context: ./bankcore/services/core-banking-service
+      dockerfile: Dockerfile
+    image: bankcore/core-banking-service:latest
+    env_file: .env
+    environment:
+      PORT: "8100"
+      SERVICE_NAME: core-banking-service
+    ports:
+      - "8100:8100"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8100/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  account-management-service:
+    build:
+      context: ./bankcore/services/account-management-service
+      dockerfile: Dockerfile
+    image: bankcore/account-management-service:latest
+    env_file: .env
+    environment:
+      PORT: "8101"
+      SERVICE_NAME: account-management-service
+    ports:
+      - "8101:8101"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8101/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  transaction-processing-service:
+    build:
+      context: ./bankcore/services/transaction-processing-service
+      dockerfile: Dockerfile
+    image: bankcore/transaction-processing-service:latest
+    env_file: .env
+    environment:
+      PORT: "8102"
+      SERVICE_NAME: transaction-processing-service
+    ports:
+      - "8102:8102"
+    networks: [bankcore]
+    depends_on:
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8102/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  loan-origination-service:
+    build:
+      context: ./bankcore/services/loan-origination-service
+      dockerfile: Dockerfile
+    image: bankcore/loan-origination-service:latest
+    env_file: .env
+    environment:
+      PORT: "8103"
+      SERVICE_NAME: loan-origination-service
+    ports:
+      - "8103:8103"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8103/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  loan-servicing-service:
+    build:
+      context: ./bankcore/services/loan-servicing-service
+      dockerfile: Dockerfile
+    image: bankcore/loan-servicing-service:latest
+    env_file: .env
+    environment:
+      PORT: "8104"
+      SERVICE_NAME: loan-servicing-service
+    ports:
+      - "8104:8104"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8104/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  card-management-service:
+    build:
+      context: ./bankcore/services/card-management-service
+      dockerfile: Dockerfile
+    image: bankcore/card-management-service:latest
+    env_file: .env
+    environment:
+      PORT: "8105"
+      SERVICE_NAME: card-management-service
+    ports:
+      - "8105:8105"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8105/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  bill-payment-service:
+    build:
+      context: ./bankcore/services/bill-payment-service
+      dockerfile: Dockerfile
+    image: bankcore/bill-payment-service:latest
+    env_file: .env
+    environment:
+      PORT: "8106"
+      SERVICE_NAME: bill-payment-service
+    ports:
+      - "8106:8106"
+    networks: [bankcore]
+    depends_on:
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8106/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  customer-service-portal:
+    build:
+      context: ./bankcore/services/customer-service-portal
+      dockerfile: Dockerfile
+    image: bankcore/customer-service-portal:latest
+    env_file: .env
+    environment:
+      PORT: "8107"
+      SERVICE_NAME: customer-service-portal
+    ports:
+      - "8107:8107"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8107/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  reporting-analytics-service:
+    build:
+      context: ./bankcore/services/reporting-analytics-service
+      dockerfile: Dockerfile
+    image: bankcore/reporting-analytics-service:latest
+    env_file: .env
+    environment:
+      PORT: "8108"
+      SERVICE_NAME: reporting-analytics-service
+    ports:
+      - "8108:8108"
+    networks: [bankcore]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8108/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  compliance-aml-service:
+    build:
+      context: ./bankcore/services/compliance-aml-service
+      dockerfile: Dockerfile
+    image: bankcore/compliance-aml-service:latest
+    env_file: .env
+    environment:
+      PORT: "8109"
+      SERVICE_NAME: compliance-aml-service
+    ports:
+      - "8109:8109"
+    networks: [bankcore]
+    depends_on:
+      postgres:  { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8109/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3

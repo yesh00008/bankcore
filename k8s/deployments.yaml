@@ -1,0 +1,538 @@
+# ─── BankCore — 10 Microservice Deployments ───────────────────────────────────
+# Build images (run inside Minikube docker env):
+#   eval $(minikube docker-env)
+#   for svc in core-banking account-management transaction-processing loan-origination loan-servicing card-management bill-payment customer-service-portal reporting-analytics compliance-aml; do
+#     docker build -t bankcore/${svc}-service:latest bankcore/services/${svc}-service/
+#   done
+---
+# ─── Core Banking Service (8100) — primary entry point ────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-core-banking
+  namespace: bankcore
+  labels:
+    app: bankcore-core-banking
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-core-banking
+  template:
+    metadata:
+      labels:
+        app: bankcore-core-banking
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8100"
+    spec:
+      containers:
+      - name: core-banking
+        image: bankcore/core-banking-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8100, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "128Mi", cpu: "100m" }
+          limits:   { memory: "256Mi", cpu: "500m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8100 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8100 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-core-banking
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-core-banking
+  ports:
+  - { port: 8100, targetPort: 8100, name: http }
+
+---
+# ─── Account Management (8101) ────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-account-management
+  namespace: bankcore
+  labels:
+    app: bankcore-account-management
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-account-management
+  template:
+    metadata:
+      labels:
+        app: bankcore-account-management
+        version: v1
+    spec:
+      containers:
+      - name: account-management
+        image: bankcore/account-management-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8101, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8101 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8101 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-account-management
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-account-management
+  ports:
+  - { port: 8101, targetPort: 8101, name: http }
+
+---
+# ─── Transaction Processing (8102) ────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-transaction-processing
+  namespace: bankcore
+  labels:
+    app: bankcore-transaction-processing
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-transaction-processing
+  template:
+    metadata:
+      labels:
+        app: bankcore-transaction-processing
+        version: v1
+    spec:
+      containers:
+      - name: transaction-processing
+        image: bankcore/transaction-processing-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8102, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8102 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8102 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-transaction-processing
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-transaction-processing
+  ports:
+  - { port: 8102, targetPort: 8102, name: http }
+
+---
+# ─── Loan Origination (8103) ──────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-loan-origination
+  namespace: bankcore
+  labels:
+    app: bankcore-loan-origination
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-loan-origination
+  template:
+    metadata:
+      labels:
+        app: bankcore-loan-origination
+        version: v1
+    spec:
+      containers:
+      - name: loan-origination
+        image: bankcore/loan-origination-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8103, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8103 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8103 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-loan-origination
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-loan-origination
+  ports:
+  - { port: 8103, targetPort: 8103, name: http }
+
+---
+# ─── Loan Servicing (8104) ────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-loan-servicing
+  namespace: bankcore
+  labels:
+    app: bankcore-loan-servicing
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-loan-servicing
+  template:
+    metadata:
+      labels:
+        app: bankcore-loan-servicing
+        version: v1
+    spec:
+      containers:
+      - name: loan-servicing
+        image: bankcore/loan-servicing-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8104, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8104 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8104 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-loan-servicing
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-loan-servicing
+  ports:
+  - { port: 8104, targetPort: 8104, name: http }
+
+---
+# ─── Card Management (8105) ───────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-card-management
+  namespace: bankcore
+  labels:
+    app: bankcore-card-management
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-card-management
+  template:
+    metadata:
+      labels:
+        app: bankcore-card-management
+        version: v1
+    spec:
+      containers:
+      - name: card-management
+        image: bankcore/card-management-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8105, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8105 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8105 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-card-management
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-card-management
+  ports:
+  - { port: 8105, targetPort: 8105, name: http }
+
+---
+# ─── Bill Payment (8106) ──────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-bill-payment
+  namespace: bankcore
+  labels:
+    app: bankcore-bill-payment
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-bill-payment
+  template:
+    metadata:
+      labels:
+        app: bankcore-bill-payment
+        version: v1
+    spec:
+      containers:
+      - name: bill-payment
+        image: bankcore/bill-payment-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8106, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8106 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8106 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-bill-payment
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-bill-payment
+  ports:
+  - { port: 8106, targetPort: 8106, name: http }
+
+---
+# ─── Customer Service Portal (8107) ───────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-customer-portal
+  namespace: bankcore
+  labels:
+    app: bankcore-customer-portal
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-customer-portal
+  template:
+    metadata:
+      labels:
+        app: bankcore-customer-portal
+        version: v1
+    spec:
+      containers:
+      - name: customer-portal
+        image: bankcore/customer-service-portal:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8107, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8107 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8107 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-customer-portal
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-customer-portal
+  ports:
+  - { port: 8107, targetPort: 8107, name: http }
+
+---
+# ─── Reporting Analytics (8108) ───────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-reporting-analytics
+  namespace: bankcore
+  labels:
+    app: bankcore-reporting-analytics
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-reporting-analytics
+  template:
+    metadata:
+      labels:
+        app: bankcore-reporting-analytics
+        version: v1
+    spec:
+      containers:
+      - name: reporting-analytics
+        image: bankcore/reporting-analytics-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8108, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8108 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8108 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-reporting-analytics
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-reporting-analytics
+  ports:
+  - { port: 8108, targetPort: 8108, name: http }
+
+---
+# ─── Compliance AML (8109) ────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankcore-compliance-aml
+  namespace: bankcore
+  labels:
+    app: bankcore-compliance-aml
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankcore-compliance-aml
+  template:
+    metadata:
+      labels:
+        app: bankcore-compliance-aml
+        version: v1
+    spec:
+      containers:
+      - name: compliance-aml
+        image: bankcore/compliance-aml-service:latest
+        imagePullPolicy: Never
+        ports:
+        - { containerPort: 8109, name: http }
+        envFrom:
+        - configMapRef: { name: bankcore-config }
+        - secretRef:    { name: bankcore-secrets }
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits:   { memory: "128Mi", cpu: "250m" }
+        livenessProbe:
+          httpGet: { path: /health, port: 8109 }
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet: { path: /health, port: 8109 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankcore-compliance-aml
+  namespace: bankcore
+spec:
+  selector:
+    app: bankcore-compliance-aml
+  ports:
+  - { port: 8109, targetPort: 8109, name: http }

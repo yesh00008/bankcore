@@ -1,0 +1,25 @@
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: bankcore-access-logs
+  namespace: bankcore
+spec:
+  accessLogging:
+  - providers:
+    - name: envoy
+    disabled: false
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: bankcore-metrics
+  namespace: bankcore
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+    overrides:
+    - match:
+        mode: CLIENT_AND_SERVER
+      disabled: false

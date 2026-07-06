@@ -1,0 +1,30 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: bankcore-vs
+  namespace: bankcore
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - bankcore-gateway
+  http:
+  - match:
+    - uri: { prefix: /health }
+    route:
+    - destination:
+        host: bankcore-core-banking
+        port: { number: 8100 }
+  - match:
+    - uri: { prefix: /api }
+    route:
+    - destination:
+        host: bankcore-core-banking
+        port: { number: 8100 }
+      timeout: 30s
+  - match:
+    - uri: { prefix: /metrics }
+    route:
+    - destination:
+        host: bankcore-core-banking
+        port: { number: 8100 }

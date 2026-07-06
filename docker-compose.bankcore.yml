@@ -1,0 +1,198 @@
+version: '3.8'
+
+services:
+  # Service 1: Core Banking (8100)
+  bankcore-core-banking:
+    build:
+      context: ./bankcore/services/core-banking-service
+      dockerfile: Dockerfile
+    container_name: bankcore-core-banking
+    ports:
+      - "8100:8100"
+    environment:
+      - PORT=8100
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@payflow-rabbitmq:5672/
+    networks:
+      - payflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service 2: Account Management (8101)
+  bankcore-account-management:
+    build:
+      context: ./bankcore/services/account-management-service
+      dockerfile: Dockerfile
+    container_name: bankcore-account-management
+    ports:
+      - "8101:8101"
+    environment:
+      - PORT=8101
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8101/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service 3: Transaction Processing (8102)
+  bankcore-transaction-processing:
+    build:
+      context: ./bankcore/services/transaction-processing-service
+      dockerfile: Dockerfile
+    container_name: bankcore-transaction-processing
+    ports:
+      - "8102:8102"
+    environment:
+      - PORT=8102
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@payflow-rabbitmq:5672/
+    networks:
+      - payflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8102/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service 4: Loan Origination (8103)
+  bankcore-loan-origination:
+    build:
+      context: ./bankcore/services/loan-origination-service
+      dockerfile: Dockerfile
+    container_name: bankcore-loan-origination
+    ports:
+      - "8103:8103"
+    environment:
+      - PORT=8103
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8103/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service 5: Loan Servicing (8104)
+  bankcore-loan-servicing:
+    build:
+      context: ./bankcore/services/loan-servicing-service
+      dockerfile: Dockerfile
+    container_name: bankcore-loan-servicing
+    ports:
+      - "8104:8104"
+    environment:
+      - PORT=8104
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8104/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service 6: Card Management (8105)
+  bankcore-card-management:
+    build:
+      context: ./bankcore/services/card-management-service
+      dockerfile: Dockerfile
+    container_name: bankcore-card-management
+    ports:
+      - "8105:8105"
+    environment:
+      - PORT=8105
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8105/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service 7: Bill Payment (8106)
+  bankcore-bill-payment:
+    build:
+      context: ./bankcore/services/bill-payment-service
+      dockerfile: Dockerfile
+    container_name: bankcore-bill-payment
+    ports:
+      - "8106:8106"
+    environment:
+      - PORT=8106
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+
+  # Service 8: Customer Service Portal (8107)
+  bankcore-customer-service:
+    build:
+      context: ./bankcore/services/customer-service-portal
+      dockerfile: Dockerfile
+    container_name: bankcore-customer-service
+    ports:
+      - "8107:8107"
+    environment:
+      - PORT=8107
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+
+  # Service 9: Reporting & Analytics (8108)
+  bankcore-reporting-analytics:
+    build:
+      context: ./bankcore/services/reporting-analytics-service
+      dockerfile: Dockerfile
+    container_name: bankcore-reporting-analytics
+    ports:
+      - "8108:8108"
+    environment:
+      - PORT=8108
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+
+  # Service 10: Compliance & AML (8109)
+  bankcore-compliance-aml:
+    build:
+      context: ./bankcore/services/compliance-aml-service
+      dockerfile: Dockerfile
+    container_name: bankcore-compliance-aml
+    ports:
+      - "8109:8109"
+    environment:
+      - PORT=8109
+      - DATABASE_URL=postgres://fintech:fintech123@payflow-postgres:5432/bankcore?sslmode=disable
+      - REDIS_URL=payflow-redis:6379
+    networks:
+      - payflow-network
+    restart: unless-stopped
+
+networks:
+  payflow-network:
+    external: true
